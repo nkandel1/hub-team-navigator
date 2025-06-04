@@ -1,16 +1,16 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Bell, Search, MapPin } from 'lucide-react';
+import { Bell, Search, MapPin, LogOut, User } from 'lucide-react';
 import NewsTicker from './NewsTicker';
 import StatusIndicator from './StatusIndicator';
 import SecurityPortal from './SecurityPortal';
 import SharedDrives from './SharedDrives';
 import InteractiveMap from './InteractiveMap';
 import AdminPanel from './AdminPanel';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface DashboardData {
@@ -22,7 +22,7 @@ interface DashboardData {
 }
 
 const Dashboard = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { user, isAdmin, signOut } = useAuth();
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [dashboardData, setDashboardData] = useState<DashboardData>({
@@ -48,18 +48,28 @@ const Dashboard = () => {
   });
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Simulate checking user role
-    const userRole = localStorage.getItem('userRole');
-    setIsAdmin(userRole === 'admin');
-  }, []);
-
   const handleDataUpdate = (newData: Partial<DashboardData>) => {
     setDashboardData(prev => ({ ...prev, ...newData }));
     toast({
       title: "Dashboard Updated",
       description: "Changes have been saved successfully.",
     });
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredContent = searchTerm ? 
@@ -107,6 +117,21 @@ const Dashboard = () => {
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   3
                 </span>
+              </Button>
+
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <User className="w-4 h-4" />
+                <span>{user?.email}</span>
+                {isAdmin && <Badge variant="secondary" className="text-xs">Admin</Badge>}
+              </div>
+
+              <Button 
+                onClick={handleSignOut}
+                variant="ghost" 
+                size="sm"
+                className="text-gray-600 hover:text-gray-800"
+              >
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
           </div>
