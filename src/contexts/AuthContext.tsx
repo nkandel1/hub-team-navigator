@@ -9,6 +9,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  isSupabaseConfigured: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,11 +25,19 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Check if Supabase is properly configured
+  const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   // Check if user is admin based on email domain or specific emails
   const isAdmin = user?.email === 'mary@company.com' || user?.email?.endsWith('@admin.company.com') || false;
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -42,9 +51,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isSupabaseConfigured]);
 
   const signIn = async (email: string, password: string) => {
+    if (!isSupabaseConfigured) {
+      throw new Error('Supabase is not properly configured');
+    }
+    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -53,6 +66,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    if (!isSupabaseConfigured) {
+      throw new Error('Supabase is not properly configured');
+    }
+    
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };
@@ -64,6 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loading,
       signIn,
       signOut,
+      isSupabaseConfigured,
     }}>
       {children}
     </AuthContext.Provider>
