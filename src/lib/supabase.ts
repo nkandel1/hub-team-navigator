@@ -11,9 +11,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
     url: supabaseUrl ? 'Set' : 'Missing', 
     key: supabaseAnonKey ? 'Set' : 'Missing' 
   });
-  
-  // Create a dummy client to prevent the app from crashing
-  export const supabase = createClient('https://placeholder.supabase.co', 'placeholder-key');
-} else {
-  export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 }
+
+// Create client with placeholder values if env vars are missing to prevent crashes
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co', 
+  supabaseAnonKey || 'placeholder-key'
+);
